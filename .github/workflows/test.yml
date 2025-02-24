@@ -1,49 +1,108 @@
-name: Node.js Tests
+name: Complete Secure Pipeline
 
 on:
   push:
-    branches: [ master ]
+    branches:
+      - main
+      - 'feature/**'
+      - 'bugfix/**'
   pull_request:
-    branches: [ master ]
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
 
 jobs:
-  test:
+  verify:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Display GitHub context information
-      env:
-        GITHUB_CONTEXT: ${{ toJSON(github) }}
-      run: |
-        echo "Commit SHA: ${{ github.sha }}"
-        echo "Commit Author: ${{ github.actor }}"
-        echo "Commit Timestamp: ${{ github.event.head_commit.timestamp }}"
-        echo "Event Name: ${{ github.event_name }}"
-        echo "Repository: ${{ github.repository }}"
-        
-    - name: Checkout repository
-      uses: actions/checkout@v4
-        
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18.x'
-        cache: 'npm'
-        
-    - name: Install dependencies
-      run: npm ci
-        
-    - name: Run security audit
-      run: npm audit
-      
-    - name: Check for outdated dependencies
-      run: npm outdated
-      
-    - name: Run all tests
-      run: npm test
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Run Custom Summary Action
-      uses: ./.github/actions/display-summary
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run security audit
+        run: npm audit
+
+      - name: Run tests
+        run: npm test
+
+      - name: Check code quality
+        run: |
+          npm run lint
+          npm outdated
+
+  # This job will only run on pull requests
+  approval:
+    needs: verify
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Check pull request reviews
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: reviews } = await github.rest.pulls.listReviews({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            
+            const approved = reviews.some(review => review.state === 'APPROVED');
+            if (!approved) {
+              core.setFailed('Pull request needs approval before merging');
+            }
+
+      - name: Check for open comments
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: comments } = await github.rest.pulls.listReviewComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            
+            if (comments.length > 0) {
+              core.setFailed('All comments must be resolved before merging');
+            }
+
+  # This job will only run on push to main
+  publish:
+    needs: verify
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build --if-present
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ github.run_number }}
+          release_name: Release v${{ github.run_number }}
+          draft: false
+          prerelease: false
       
     # - name: Run specific test files
     #   run: |
