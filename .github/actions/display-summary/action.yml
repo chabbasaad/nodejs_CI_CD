@@ -1,13 +1,14 @@
-name: 'Display Test Summary'
-description: 'A custom action to display test execution summary'
+name: 'Simple Test Result'
+description: 'Shows if tests passed or failed with a friendly message'
 runs:
   using: 'composite'
   steps:
     - shell: bash
       run: |
-        echo "==== Test Execution Summary ===="
-        echo "🔍 Repository: ${{ github.repository }}"
-        echo "👤 Running as: ${{ github.actor }}"
-        echo "📅 Date: $(date)"
-        echo "🌿 Branch: ${{ github.ref }}"
-        echo "==============================="
+        if [ $? -eq 0 ]; then
+          echo " Awesome! All tests passed! "
+          echo " Good job! Your code is working great!"
+        else
+          echo " Oops! Some tests failed"
+          echo " Check the test output above for details"
+        fi
