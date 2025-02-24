@@ -2,34 +2,43 @@ name: Node.js Tests
 
 on:
   push:
-    branches: [  master ]
+    branches: [ master ]
   pull_request:
-    branches: [  master ]
+    branches: [ master ]
 
 jobs:
   test:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Display GitHub context information
+      env:
+        GITHUB_CONTEXT: ${{ toJSON(github) }}
+      run: |
+        echo "Commit SHA: ${{ github.sha }}"
+        echo "Commit Author: ${{ github.actor }}"
+        echo "Commit Timestamp: ${{ github.event.head_commit.timestamp }}"
+        echo "Event Name: ${{ github.event_name }}"
+        echo "Repository: ${{ github.repository }}"
+        
     - name: Checkout repository
       uses: actions/checkout@v4
-
-    
+        
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '18.x'
         cache: 'npm'
-    
+        
     - name: Install dependencies
       run: npm ci
-    
+        
     - name: Run security audit
       run: npm audit
-
+      
     - name: Check for outdated dependencies
       run: npm outdated
-
+      
     - name: Run all tests
       run: npm test
       
