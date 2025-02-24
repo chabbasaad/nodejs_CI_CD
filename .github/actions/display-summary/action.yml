@@ -1,0 +1,13 @@
+name: 'Display Test Summary'
+description: 'A custom action to display test execution summary'
+runs:
+  using: 'composite'
+  steps:
+    - shell: bash
+      run: |
+        echo "==== Test Execution Summary ===="
+        echo "🔍 Repository: ${{ github.repository }}"
+        echo "👤 Running as: ${{ github.actor }}"
+        echo "📅 Date: $(date)"
+        echo "🌿 Branch: ${{ github.ref }}"
+        echo "==============================="

@@ -41,6 +41,9 @@ jobs:
       
     - name: Run all tests
       run: npm test
+
+    - name: Run Custom Summary Action
+      uses: ./.github/actions/display-summary
       
     # - name: Run specific test files
     #   run: |
