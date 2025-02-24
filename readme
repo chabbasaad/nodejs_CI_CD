@@ -1,0 +1,9 @@
+#  run the test by using the following command
+
+#  by full folder or name of the file
+
+npm run test-folder
+npm test tests/substract.test.js
+npm test tests/divide.test.js
+npm test tests/UserDatabase.test.js
+npm test tests/emailValidator.test.js

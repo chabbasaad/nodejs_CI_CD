@@ -1,0 +1,13 @@
+{
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  
+    "scripts": {
+      "test": "jest",
+      "test-folder": "jest tests/",
+      "test-name": "jest src/",
+      "test:watch": "jest --watch"
+    }
+  
+}
